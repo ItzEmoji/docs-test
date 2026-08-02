@@ -1,12 +1,12 @@
 {
   "projects": [
     {
-      "name": "aeroflare",
-      "path": "projects/aeroflare",
-      "buildCommand": "cd docs && npm ci && npm run build",
-      "outputDir": "docs/build",
-      "title": "Aeroflare",
-      "description": "A stateless Nix binary cache proxy, written in Go, that stores packages as OCI images in any container registry."
+      "name": "test",
+      "path": "projects/test",
+      "buildCommand": "cd website && bun install && bun run build",
+      "outputDir": "website/build",
+      "title": "Test",
+      "description": "-"
     }
   ]
 }
