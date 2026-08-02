@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      refresh_submodules:
+        description: >-
+          Build each project's latest documentation instead of the commit
+          pinned here. A project repository dispatches this after publishing.
+        type: boolean
+        default: true
 
 concurrency:
   group: deploy-docs
@@ -19,6 +26,14 @@ jobs:
         with:
           submodules: recursive
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      # A dispatch means a project just published docs the pinned commit does
+      # not contain, so the checkout is moved forward before building. The
+      # pointer is not committed: a push builds exactly what is pinned, and
+      # only an explicit dispatch floats.
+      - name: Pull each project's latest documentation
+        if: inputs.refresh_submodules
+        run: git submodule update --remote --recursive
 
       - uses: oven-sh/setup-bun@v2
         with:
