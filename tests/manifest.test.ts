@@ -7,7 +7,7 @@ import { loadManifest, parseManifest } from "../src/manifest.ts";
 const valid = {
   projects: [
     {
-      name: "test",
+      path: "test",
       title: "Test",
       description: "Sandbox docs project.",
     },
@@ -22,7 +22,7 @@ describe("parseManifest", () => {
   test("parses a valid manifest", () => {
     const projects = parseManifest(JSON.stringify(valid));
     expect(projects).toHaveLength(1);
-    expect(projects[0]!.name).toBe("test");
+    expect(projects[0]!.path).toBe("test");
     expect(projects[0]!.title).toBe("Test");
   });
 
@@ -45,25 +45,25 @@ describe("parseManifest", () => {
     );
   });
 
-  test("reports the index when the name itself is missing", () => {
-    const broken = { ...valid.projects[0], name: undefined };
-    expect(() => parseManifest(withProjects([broken]))).toThrow(/index 0.*"name"/);
+  test("reports the index when the path itself is missing", () => {
+    const broken = { ...valid.projects[0], path: undefined };
+    expect(() => parseManifest(withProjects([broken]))).toThrow(/index 0.*"path"/);
   });
 
-  test("rejects a malformed name", () => {
-    const broken = { ...valid.projects[0], name: "Test Project" };
+  test("rejects a malformed path", () => {
+    const broken = { ...valid.projects[0], path: "Test Project" };
     expect(() => parseManifest(withProjects([broken]))).toThrow(/lowercase/);
   });
 
-  test("rejects a name the site's own assets already occupy", () => {
-    const broken = { ...valid.projects[0], name: "fonts" };
-    expect(() => parseManifest(withProjects([broken]))).toThrow(/reserved name "fonts"/);
+  test("rejects a path the site's own assets already occupy", () => {
+    const broken = { ...valid.projects[0], path: "fonts" };
+    expect(() => parseManifest(withProjects([broken]))).toThrow(/reserved path "fonts"/);
   });
 
-  test("rejects duplicate names", () => {
+  test("rejects duplicate paths", () => {
     expect(() =>
       parseManifest(withProjects([valid.projects[0], valid.projects[0]])),
-    ).toThrow(/duplicate project name "test"/);
+    ).toThrow(/duplicate path "test"/);
   });
 
   test("rejects a non-string field", () => {
@@ -96,6 +96,6 @@ describe("loadManifest", () => {
     const projects = await loadManifest(manifestPath);
 
     expect(projects).toHaveLength(1);
-    expect(projects[0]!.name).toBe("test");
+    expect(projects[0]!.path).toBe("test");
   });
 });

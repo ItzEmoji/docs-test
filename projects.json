@@ -1,22 +1,7 @@
 {
   "projects": [
     {
-      "name": "test",
-      "title": "Test",
-      "description": "Sandbox project used to try out the documentation pipeline before it goes to docs.itzemoji.com."
-    },
-    {
-      "name": "test",
-      "title": "Test",
-      "description": "Sandbox project used to try out the documentation pipeline before it goes to docs.itzemoji.com."
-    },
-    {
-      "name": "test",
-      "title": "Test",
-      "description": "Sandbox project used to try out the documentation pipeline before it goes to docs.itzemoji.com."
-    },
-    {
-      "name": "test",
+      "path": "test",
       "title": "Test",
       "description": "Sandbox project used to try out the documentation pipeline before it goes to docs.itzemoji.com."
     }

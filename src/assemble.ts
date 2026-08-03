@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readdir } from "node:fs/promises";
+import { copyFile, mkdir } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { renderIndexPage } from "./index-page.ts";
@@ -42,42 +42,16 @@ export async function writeAssets(repoRoot: string): Promise<void> {
 }
 
 /**
- * Each project's build output is copied into `<name>/` by hand, outside this
- * tool — there is no submodule and no build command to run. This only
- * checks that the promised directory is actually there before the generated
- * index page links to it.
+ * The landing page is just a register: it lists what `projects.json` says
+ * and links to `/<path>/`, regardless of whether anything has been copied
+ * to that path yet. Nothing here builds or checks project output — that
+ * happens by hand, in each project's own repo, independently of this page.
  */
-export async function preflight(
-  project: ProjectConfig,
-  repoRoot: string,
-): Promise<void> {
-  const dir = join(repoRoot, project.name);
-
-  let entries: string[];
-  try {
-    entries = await readdir(dir);
-  } catch {
-    throw new Error(
-      `${project.name}: no directory at ${project.name}/ — copy its built output there first`,
-    );
-  }
-
-  if (entries.length === 0 || !entries.includes("index.html")) {
-    throw new Error(
-      `${project.name}: ${project.name}/ has no index.html — copy its built output there first`,
-    );
-  }
-}
-
 export async function assemble(
   projects: ProjectConfig[],
   options: AssembleOptions,
 ): Promise<void> {
   const { repoRoot } = options;
-
-  for (const project of projects) {
-    await preflight(project, repoRoot);
-  }
 
   await writeAssets(repoRoot);
   await Bun.write(join(repoRoot, "index.html"), renderIndexPage(projects));

@@ -73,13 +73,13 @@ ${projects.map(renderProject).join("\n")}
  * path it is served at. The row itself is the link.
  */
 function renderProject(project: ProjectConfig): string {
-  const name = escapeHtml(project.name);
-  return `    <a class="row" href="/${name}/">
+  const path = escapeHtml(project.path);
+  return `    <a class="row" href="/${path}/">
       <span class="row-text">
         <span class="row-title">${escapeHtml(project.title)}</span>
         <span class="row-desc">${escapeHtml(project.description)}</span>
       </span>
-      <span class="row-path">/${name}/</span>
+      <span class="row-path">/${path}/</span>
       <span class="row-go">${icons.chevronRight}</span>
     </a>`;
 }

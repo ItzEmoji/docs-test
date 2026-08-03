@@ -2,7 +2,7 @@
 
 Staging ground for documentation before it goes to `docs.itzemoji.com`. Each
 project's docs are built in its own repo and its output is copied in by hand
-under a top-level directory named after the project (e.g. `test/` for
+under a top-level directory (e.g. `test/` for
 [`itzemoji/test`](https://github.com/itzemoji/test)) — there is no submodule
 and no build step run against them here.
 
@@ -10,6 +10,13 @@ What this repo *does* automate is the landing page: a small Bun/TS generator,
 lifted from `docs.itzemoji.com`'s own orchestrator, reads `projects.json` and
 regenerates the root `index.html` + `app.css` + `fonts/` so the register of
 projects stays in sync without hand-editing HTML.
+
+`projects.json` is just a register — it lists what should appear on the
+landing page and where it's linked to. The generator doesn't check that
+`<path>/` actually exists or has anything built in it; it only cares about
+`projects.json` itself. That's deliberate: you can add the entry before or
+after copying the build output in, in either order, without the build
+failing.
 
 ## Usage
 
@@ -31,17 +38,13 @@ build fresh on every deploy, so nothing generated needs to be committed.
 
 ## Adding a project
 
-1. Build the project's docs in its own repo, however it builds (Docusaurus,
-   VitePress, whatever) — pointed at base path `/<name>/` if the tool
-   supports one, so its own asset links resolve once served here.
-2. Copy the build output into `<name>/` at the root of this repo.
-3. Add an entry to `projects.json`:
+1. Add an entry to `projects.json`:
 
    ```json
    {
      "projects": [
        {
-         "name": "test",
+         "path": "test",
          "title": "Test",
          "description": "One line shown on the landing page."
        }
@@ -49,10 +52,18 @@ build fresh on every deploy, so nothing generated needs to be committed.
    }
    ```
 
-4. Run `bun run build` (or just push — CI does this before every deploy) and
-   the new project shows up in the register automatically.
+2. Build the project's docs in its own repo, however it builds (Docusaurus,
+   VitePress, whatever) — pointed at base path `/<path>/` if the tool
+   supports one, so its own asset links resolve once served here — and copy
+   the build output into `<path>/` at the root of this repo.
 
-`name` doubles as the served path and must be lowercase letters, digits and
+Either step can come first; the generator only reads `projects.json` and
+doesn't check that `<path>/` exists.
+
+3. Run `bun run build` (or just push — CI does this before every deploy) and
+   the new project shows up in the register.
+
+`path` doubles as the served URL and must be lowercase letters, digits and
 dashes. `fonts` is reserved — the site's own assets live there.
 
 ## Deployment

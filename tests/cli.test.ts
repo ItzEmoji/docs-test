@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { run } from "../src/cli.ts";
@@ -14,25 +14,20 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true });
 });
 
-function entry(name: string) {
-  return { name, title: name, description: `${name} docs` };
+function entry(path: string) {
+  return { path, title: path, description: `${path} docs` };
 }
 
-/** Writes the manifest and a pre-built output directory for each project. */
-async function seed(names: string[]): Promise<void> {
+async function seedManifest(paths: string[]): Promise<void> {
   await writeFile(
     join(root, "projects.json"),
-    JSON.stringify({ projects: names.map(entry) }),
+    JSON.stringify({ projects: paths.map(entry) }),
   );
-  for (const name of names) {
-    await mkdir(join(root, name), { recursive: true });
-    await writeFile(join(root, name, "index.html"), `<h1>${name}</h1>`);
-  }
 }
 
 describe("run", () => {
   test("regenerates the landing page for every project in the manifest", async () => {
-    await seed(["test", "beacon"]);
+    await seedManifest(["test", "beacon"]);
 
     await run({ repoRoot: root });
 
@@ -41,20 +36,15 @@ describe("run", () => {
     expect(index).toContain('href="/beacon/"');
   });
 
-  test("throws and writes nothing when a listed project has no directory", async () => {
-    await writeFile(
-      join(root, "projects.json"),
-      JSON.stringify({ projects: [entry("test")] }),
-    );
+  test("does not require the project's directory to exist", async () => {
+    await seedManifest(["test"]);
 
-    await expect(run({ repoRoot: root })).rejects.toThrow(
-      /copy its built output there first/,
-    );
-    expect(await Bun.file(join(root, "index.html")).exists()).toBe(false);
+    await expect(run({ repoRoot: root })).resolves.toBeUndefined();
+    expect(await Bun.file(join(root, "index.html")).exists()).toBe(true);
   });
 
   test("succeeds with an empty manifest", async () => {
-    await seed([]);
+    await seedManifest([]);
 
     await run({ repoRoot: root });
 
@@ -62,7 +52,7 @@ describe("run", () => {
   });
 
   test("reports how many projects were assembled", async () => {
-    await seed(["test"]);
+    await seedManifest(["test"]);
     const messages: string[] = [];
 
     await run({ repoRoot: root, log: (message) => messages.push(message) });

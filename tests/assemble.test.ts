@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { assemble, preflight } from "../src/assemble.ts";
+import { assemble } from "../src/assemble.ts";
 import type { ProjectConfig } from "../src/manifest.ts";
 
 let root: string;
@@ -15,62 +15,33 @@ afterEach(async () => {
   await rm(root, { recursive: true, force: true });
 });
 
-function project(name: string): ProjectConfig {
-  return { name, title: name, description: `${name} docs` };
+function project(path: string): ProjectConfig {
+  return { path, title: path, description: `${path} docs` };
 }
-
-/** Simulates a project's build output already having been copied to `<repoRoot>/<name>/`. */
-async function seedProjectDir(root_: string, name: string): Promise<void> {
-  await mkdir(join(root_, name), { recursive: true });
-  await writeFile(join(root_, name, "index.html"), `<h1>${name}</h1>`);
-}
-
-describe("preflight", () => {
-  test("passes when the project directory has an index.html", async () => {
-    await seedProjectDir(root, "test");
-    await expect(preflight(project("test"), root)).resolves.toBeUndefined();
-  });
-
-  test("fails when the directory does not exist", async () => {
-    await expect(preflight(project("test"), root)).rejects.toThrow(
-      /copy its built output there first/,
-    );
-  });
-
-  test("fails when the directory has no index.html", async () => {
-    await mkdir(join(root, "test"), { recursive: true });
-    await expect(preflight(project("test"), root)).rejects.toThrow(
-      /copy its built output there first/,
-    );
-  });
-});
 
 describe("assemble", () => {
   test("writes a root index page linking each project", async () => {
-    await seedProjectDir(root, "test");
-
     await assemble([project("test")], { repoRoot: root });
 
     const html = await Bun.file(join(root, "index.html")).text();
     expect(html).toContain('href="/test/"');
   });
 
-  test("throws instead of writing anything when a project directory is missing", async () => {
-    await expect(
-      assemble([project("test")], { repoRoot: root }),
-    ).rejects.toThrow(/copy its built output there first/);
+  test("links a project even when its directory does not exist on disk", async () => {
+    // The landing page is a register, not a build tool: it lists what
+    // projects.json says regardless of what has actually been copied in.
+    await assemble([project("not-copied-in-yet")], { repoRoot: root });
 
-    expect(await Bun.file(join(root, "index.html")).exists()).toBe(false);
+    const html = await Bun.file(join(root, "index.html")).text();
+    expect(html).toContain('href="/not-copied-in-yet/"');
   });
 
   test("never touches files that are already in the repo", async () => {
-    await seedProjectDir(root, "test");
     await writeFile(join(root, "README.md"), "hand-written");
 
     await assemble([project("test")], { repoRoot: root });
 
     expect(await Bun.file(join(root, "README.md")).text()).toBe("hand-written");
-    expect(await Bun.file(join(root, "test/index.html")).text()).toBe("<h1>test</h1>");
   });
 
   test("writes only the index page when there are no projects", async () => {

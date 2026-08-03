@@ -4,7 +4,7 @@ import type { ProjectConfig } from "../src/manifest.ts";
 
 function project(overrides: Partial<ProjectConfig> = {}): ProjectConfig {
   return {
-    name: "test",
+    path: "test",
     title: "Test",
     description: "Sandbox docs project.",
     ...overrides,
@@ -32,7 +32,7 @@ describe("renderIndexPage", () => {
   });
 
   test("links each project at its own path", () => {
-    const html = renderIndexPage([project(), project({ name: "beacon", title: "Beacon" })]);
+    const html = renderIndexPage([project(), project({ path: "beacon", title: "Beacon" })]);
     expect(html).toContain('href="/test/"');
     expect(html).toContain('href="/beacon/"');
     expect(html).toContain("Beacon");
@@ -83,7 +83,7 @@ describe("renderIndexPage", () => {
   test("counts the projects", () => {
     expect(renderIndexPage([project()])).toContain("1 project<");
     expect(
-      renderIndexPage([project(), project({ name: "beacon" })]),
+      renderIndexPage([project(), project({ path: "beacon" })]),
     ).toContain("2 projects<");
   });
 
