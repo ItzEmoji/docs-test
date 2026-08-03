@@ -4,12 +4,9 @@ import type { ProjectConfig } from "../src/manifest.ts";
 
 function project(overrides: Partial<ProjectConfig> = {}): ProjectConfig {
   return {
-    name: "aeroflare",
-    path: "projects/aeroflare",
-    buildCommand: "bun run docs:build",
-    outputDir: "dist",
-    title: "Aeroflare",
-    description: "Flight planning toolkit.",
+    name: "test",
+    title: "Test",
+    description: "Sandbox docs project.",
     ...overrides,
   };
 }
@@ -22,7 +19,7 @@ describe("escapeHtml", () => {
   });
 
   test("leaves ordinary text untouched", () => {
-    expect(escapeHtml("Aeroflare docs")).toBe("Aeroflare docs");
+    expect(escapeHtml("Test docs")).toBe("Test docs");
   });
 });
 
@@ -36,15 +33,15 @@ describe("renderIndexPage", () => {
 
   test("links each project at its own path", () => {
     const html = renderIndexPage([project(), project({ name: "beacon", title: "Beacon" })]);
-    expect(html).toContain('href="/aeroflare/"');
+    expect(html).toContain('href="/test/"');
     expect(html).toContain('href="/beacon/"');
     expect(html).toContain("Beacon");
   });
 
   test("shows title and description", () => {
     const html = renderIndexPage([project()]);
-    expect(html).toContain("Aeroflare");
-    expect(html).toContain("Flight planning toolkit.");
+    expect(html).toContain("Test");
+    expect(html).toContain("Sandbox docs project.");
   });
 
   test("escapes titles and descriptions", () => {
@@ -63,15 +60,15 @@ describe("renderIndexPage", () => {
 
   test("shows the path each project is served at", () => {
     const html = renderIndexPage([project()]);
-    expect(html).toContain('<span class="row-path">/aeroflare/</span>');
+    expect(html).toContain('<span class="row-path">/test/</span>');
   });
 
   test("makes the whole row the only link in an entry", () => {
     const html = renderIndexPage([project()]);
     const start = html.indexOf('<a class="row"');
     const entry = html.slice(start, html.indexOf("</a>", start));
-    expect(entry).toContain("Aeroflare");
-    expect(entry).toContain("Flight planning toolkit.");
+    expect(entry).toContain("Test");
+    expect(entry).toContain("Sandbox docs project.");
     // A second anchor inside the row would be a keyboard stop with no purpose.
     expect(entry.split("<a ").length - 1).toBe(1);
   });

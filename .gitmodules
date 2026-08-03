@@ -1,6 +1,0 @@
-[submodule "projects/aeroflare"]
-	path = projects/aeroflare
-	url = https://github.com/ItzEmoji/aeroflare.git
-[submodule "projects/test"]
-	path = projects/test
-	url = https://github.com/itzemoji/test.git

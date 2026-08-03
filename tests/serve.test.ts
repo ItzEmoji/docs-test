@@ -5,29 +5,31 @@ import { join } from "node:path";
 import { createServer } from "../src/serve.ts";
 
 let root: string;
+let outside: string;
 let server: Bun.Server<undefined> | undefined;
 
 beforeEach(async () => {
-  root = await mkdtemp(join(tmpdir(), "monodocs-serve-"));
+  const base = await mkdtemp(join(tmpdir(), "docstest-serve-"));
+  root = join(base, "site");
+  outside = base;
 
-  const dist = join(root, "dist");
-  await mkdir(join(dist, "aeroflare", "assets"), { recursive: true });
-  await writeFile(join(dist, "index.html"), "<h1>docs.itzemoji.com</h1>");
-  await writeFile(join(dist, "aeroflare", "index.html"), "<h1>aeroflare</h1>");
-  await writeFile(join(dist, "aeroflare", "assets", "app.css"), "body{color:red}");
-  // Lives outside dist/ — a traversal attempt must never reach it.
-  await writeFile(join(root, "secret.txt"), "top secret");
+  await mkdir(join(root, "test", "assets"), { recursive: true });
+  await writeFile(join(root, "index.html"), "<h1>docs-test</h1>");
+  await writeFile(join(root, "test", "index.html"), "<h1>test</h1>");
+  await writeFile(join(root, "test", "assets", "app.css"), "body{color:red}");
+  // Lives outside root — a traversal attempt must never reach it.
+  await writeFile(join(outside, "secret.txt"), "top secret");
 });
 
 afterEach(async () => {
   server?.stop(true);
   server = undefined;
-  await rm(root, { recursive: true, force: true });
+  await rm(outside, { recursive: true, force: true });
 });
 
 /** Starts the server on an ephemeral port and returns its base URL. */
 function start(): string {
-  server = createServer({ distDir: join(root, "dist"), port: 0 });
+  server = createServer({ rootDir: root, port: 0 });
   return `http://localhost:${server.port}`;
 }
 
@@ -36,31 +38,31 @@ describe("createServer", () => {
     const response = await fetch(`${start()}/`);
 
     expect(response.status).toBe(200);
-    expect(await response.text()).toBe("<h1>docs.itzemoji.com</h1>");
+    expect(await response.text()).toBe("<h1>docs-test</h1>");
   });
 
   test("serves a project's index at its subpath", async () => {
-    const response = await fetch(`${start()}/aeroflare/`);
+    const response = await fetch(`${start()}/test/`);
 
     expect(response.status).toBe(200);
-    expect(await response.text()).toBe("<h1>aeroflare</h1>");
+    expect(await response.text()).toBe("<h1>test</h1>");
   });
 
   test("redirects a directory path to its trailing-slash form", async () => {
-    const response = await fetch(`${start()}/aeroflare`, { redirect: "manual" });
+    const response = await fetch(`${start()}/test`, { redirect: "manual" });
 
     expect(response.status).toBe(301);
-    expect(response.headers.get("location")).toBe("/aeroflare/");
+    expect(response.headers.get("location")).toBe("/test/");
   });
 
   test("preserves the query string when redirecting", async () => {
-    const response = await fetch(`${start()}/aeroflare?q=1`, { redirect: "manual" });
+    const response = await fetch(`${start()}/test?q=1`, { redirect: "manual" });
 
-    expect(response.headers.get("location")).toBe("/aeroflare/?q=1");
+    expect(response.headers.get("location")).toBe("/test/?q=1");
   });
 
   test("serves a nested asset with the right content type", async () => {
-    const response = await fetch(`${start()}/aeroflare/assets/app.css`);
+    const response = await fetch(`${start()}/test/assets/app.css`);
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/css");
@@ -74,7 +76,7 @@ describe("createServer", () => {
   });
 
   test("returns 404 for a directory without an index.html", async () => {
-    await mkdir(join(root, "dist", "empty"), { recursive: true });
+    await mkdir(join(root, "empty"), { recursive: true });
     const response = await fetch(`${start()}/empty/`);
 
     expect(response.status).toBe(404);
@@ -82,7 +84,7 @@ describe("createServer", () => {
 
   // A client normalises `/../secret.txt` to `/secret.txt` before sending, so this
   // asserts the file never leaks rather than pinning a specific status.
-  test("never serves a file that lives outside dist/", async () => {
+  test("never serves a file that lives outside the root", async () => {
     const response = await fetch(`${start()}/../secret.txt`, { redirect: "manual" });
 
     expect(response.ok).toBe(false);

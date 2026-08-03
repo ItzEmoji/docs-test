@@ -1,9 +1,23 @@
+name: Deploy docs-test
+
 on: { push: { branches: [main] } }
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+      - name: Install landing page generator dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Test
+        run: bun test tests
+
+      - name: Regenerate the landing page
+        run: bun run build
+
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
